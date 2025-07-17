@@ -1,35 +1,36 @@
-import React, {useState, useEffect, use} from 'react'
-import './App.css';
-import { useDispatch } from 'react-redux';
-import authService from './appwrite/auth';
-import {login, logout} from './store/authSlice';
-import {Header} from './components'
-import {Footer} from './components'
-import { Outlet } from 'react-router-dom';
+import React, { useEffect } from "react";
+import "./App.css";
+import { useDispatch, useSelector } from "react-redux";
+import authService from "./appwrite/auth";
+import { login, logout, setLoading} from "./store/authSlice";
+import { Header, Footer } from "./components";
+import { Outlet } from "react-router-dom";
 
 function App() {
-
-  const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
+  const loading = useSelector((state) => state.auth.loading);
 
   useEffect(() => {
-    authService.getCurrentUser()
-    .then((userData) => {
-      if(userData) {
-        dispatch(login({userData}))
-      }else {
-        dispatch(logout())
+    const fetchUser = async () => {
+      try {
+        const userData = await authService.getCurrentUser();
+        if (userData) {
+          dispatch(login({ userData }));
+        } else {
+          dispatch(logout());
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        dispatch(logout());
+      } finally {
+        dispatch(setLoading(false));
       }
-    })
-    .catch((error) => {
-      console.error('Error fetching user data:', error);
-    })
-    .finally(() => {
-      setLoading(false);
-    })
-  }, []);
+    };
 
-    if (loading) {
+    fetchUser();
+  }, [dispatch]);
+
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -38,11 +39,11 @@ function App() {
   }
 
   return (
-    <div className='min-h-screen flex flex-wrap content-between bg-gray-400'>
-      <div className='w-full block'>
+    <div className="min-h-screen flex flex-wrap content-between bg-gray-400">
+      <div className="w-full block">
         <Header />
         <main>
-        <Outlet />
+          <Outlet />
         </main>
         <Footer />
       </div>
@@ -50,4 +51,4 @@ function App() {
   );
 }
 
-export default App
+export default App;
