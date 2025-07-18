@@ -9,7 +9,6 @@ function Home() {
   const user = useSelector((state) => state.auth.userData);
 
   useEffect(() => {
-    // Only fetch posts after auth loading completes
     if (!loading) {
       appwriteService.getPosts().then((posts) => {
         if (posts) {
