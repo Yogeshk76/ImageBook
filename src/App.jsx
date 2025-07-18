@@ -1,54 +1,46 @@
-import React, { useEffect } from "react";
-import "./App.css";
-import { useDispatch, useSelector } from "react-redux";
-import authService from "./appwrite/auth";
-import { login, logout, setLoading} from "./store/authSlice";
-import { Header, Footer } from "./components";
-import { Outlet } from "react-router-dom";
+import React, { useState, useEffect } from 'react'
+import { useDispatch } from 'react-redux'
+import './App.css'
+import authService from "./appwrite/auth"
+import { login, logout } from "./store/authSlice"
+import { Footer, Header } from './components'
+import { Outlet } from 'react-router-dom'
 
 function App() {
-  const dispatch = useDispatch();
-  const loading = useSelector((state) => state.auth.loading);
+  const [loading, setLoading] = useState(true)
+  const dispatch = useDispatch()
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const userData = await authService.getCurrentUser();
+    authService.getCurrentUser()
+      .then((userData) => {
         if (userData) {
-          dispatch(login({ userData }));
+          dispatch(login({ userData }))
         } else {
-          dispatch(logout());
+          dispatch(logout())
         }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        dispatch(logout());
-      } finally {
-        dispatch(setLoading(false));
-      }
-    };
-
-    fetchUser();
-  }, [dispatch]);
+      })
+      .finally(() => setLoading(false))
+  }, [])
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen bg-gray-100">
         <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="min-h-screen flex flex-wrap content-between bg-gray-400">
-      <div className="w-full block">
+    <div className='min-h-screen flex flex-wrap content-between bg-gray-400'>
+      <div className='w-full block'>
         <Header />
-        <main className="py-8">
+        <main>
           <Outlet />
         </main>
         <Footer />
       </div>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App
