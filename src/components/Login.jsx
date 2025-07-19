@@ -12,19 +12,23 @@ function Login() {
   const { register, handleSubmit } = useForm();
   const [error, setError] = useState("");
 
-  const login = async (data) => {
-    setError("");
-    try {
-      const session = await authService.login(data);
-      if (session) {
-        const userData = await authService.getCurrentUser();
-        if (userData) dispatch(authLogin(userData));
+const login = async (data) => {
+  setError("");
+  try {
+    const session = await authService.login(data);
+    if (session) {
+      const userData = await authService.getCurrentUser();
+      if (userData) {
+        dispatch(authLogin(userData));
+        alert("Login successful! Please reload the app manually due to Appwrite session delay.");
         navigate("/");
       }
-    } catch (error) {
-      setError(error.message);
     }
-  };
+  } catch (error) {
+    setError(error.message);
+  }
+};
+
 
   return (
     <div className="flex items-center justify-center w-full py-8">

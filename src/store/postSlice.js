@@ -8,14 +8,20 @@ export const fetchPosts = createAsyncThunk("post/fetchPosts", async () => {
 });
 
 // 🔍 Get a single post by slug
-export const getPostById = createAsyncThunk("post/getPostById", async (slug) => {
-  return await service.getPost(slug);
-});
+export const getPostById = createAsyncThunk(
+  "post/getPostById",
+  async (slug) => {
+    return await service.getPost(slug);
+  }
+);
 
 // 🆕 Create a new post
-export const createPost = createAsyncThunk("post/createPost", async (postData) => {
-  return await service.createPost(postData);
-});
+export const createPost = createAsyncThunk(
+  "post/createPost",
+  async (postData) => {
+    return await service.createPost(postData);
+  }
+);
 
 // 📝 Update an existing post
 export const updatePost = createAsyncThunk(
@@ -26,10 +32,13 @@ export const updatePost = createAsyncThunk(
 );
 
 // ❌ Delete a post
-export const deletePost = createAsyncThunk("post/deletePost", async (slug) => {
-  await service.deletePost(slug);
-  return slug;
-});
+export const deletePostById = createAsyncThunk(
+  "post/deletePost",
+  async (slug) => {
+    await service.deletePost(slug);
+    return true;
+  }
+);
 
 const postSlice = createSlice({
   name: "post",
@@ -81,15 +90,19 @@ const postSlice = createSlice({
 
       // 📝 Update post
       .addCase(updatePost.fulfilled, (state, action) => {
-        const index = state.posts.findIndex((post) => post.$id === action.payload.$id);
+        const index = state.posts.findIndex(
+          (post) => post.$id === action.payload.$id
+        );
         if (index !== -1) {
           state.posts[index] = action.payload;
         }
       })
 
       // ❌ Delete post
-      .addCase(deletePost.fulfilled, (state, action) => {
-        state.posts = state.posts.filter((post) => post.$id !== action.payload);
+      .addCase(deletePostById.fulfilled, (state, action) => {
+        state.posts = state.posts.filter(
+          (post) => post.$id !== action.meta.arg
+        ); // use slug from meta
       });
   },
 });

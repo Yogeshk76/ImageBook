@@ -3,7 +3,8 @@ import { useForm } from "react-hook-form";
 import { Button, Input, RTE, Select } from "..";
 import appwriteService from "../../appwrite/config";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import {createPost, updatePost} from "../../store/postSlice"
 
 export default function PostForm({ post }) {
   const { register, handleSubmit, watch, setValue, control, getValues } =
@@ -17,59 +18,58 @@ export default function PostForm({ post }) {
     });
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const userData = useSelector((state) => state.auth.userData);
-  const [submitting, setSubmitting] = useState(false);
-  const [isUserLoaded, setIsUserLoaded] = useState(false);
+  const loading = useSelector((state) => state.post.loading);
 
   // Detect when userData becomes available (either null or object)
-  useEffect(() => {
-    if (userData !== undefined) {
-      setIsUserLoaded(true);
-    }
-  }, [userData]);
 
-  const submit = async (data) => {
-    setSubmitting(true);
-    try {
-      if (post) {
-        const file = data.image[0]
-          ? await appwriteService.uploadFile(data.image[0])
-          : null;
+const submit = async (data) => {
+  try {
+    if (post) {
+      const file = data.image[0]
+        ? await appwriteService.uploadFile(data.image[0])
+        : null;
 
-        if (file) {
-          appwriteService.deleteFile(post.featuredImage);
-        }
+      if (file) {
+        await appwriteService.deleteFile(post.featuredImage);
+      }
 
-        const dbPost = await appwriteService.updatePost(post.$id, {
-          ...data,
-          featuredImage: file ? file.$id : undefined,
-        });
+      const dbPost = await dispatch(
+        updatePost({
+          slug: post.$id,
+          updatedData: {
+            ...data,
+            featuredImage: file ? file.$id : undefined,
+          },
+        })
+      ).unwrap();
+
+      if (dbPost) {
+        navigate(`/post/${dbPost.$id}`);
+      }
+    } else {
+      const file = await appwriteService.uploadFile(data.image[0]);
+
+      if (file) {
+        const dbPost = await dispatch(
+          createPost({
+            ...data,
+            featuredImage: file.$id,
+            userId: userData.$id,
+          })
+        ).unwrap();
 
         if (dbPost) {
           navigate(`/post/${dbPost.$id}`);
         }
-      } else {
-        const file = await appwriteService.uploadFile(data.image[0]);
-
-        if (file) {
-          const fileId = file.$id;
-          data.featuredImage = fileId;
-          const dbPost = await appwriteService.createPost({
-            ...data,
-            userId: userData.$id,
-          });
-
-          if (dbPost) {
-            navigate(`/post/${dbPost.$id}`);
-          }
-        }
       }
-    } catch (error) {
-      console.error("Submit error:", error);
-    } finally {
-      setSubmitting(false);
     }
-  };
+  } catch (error) {
+    console.error("Submit error:", error);
+  }
+};
+
 
   const slugTransform = useCallback((value) => {
     if (value && typeof value === "string")
@@ -146,18 +146,13 @@ export default function PostForm({ post }) {
           {...register("status", { required: true })}
         />
 
-        {!isUserLoaded ? (
-          <div className="flex justify-center py-2">
-            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        ) : (
           <Button
             type="submit"
             bgColor={post ? "bg-green-500" : undefined}
             className="w-full"
-            disabled={submitting}
+            disabled={loading}
           >
-            {submitting ? (
+            {loading ? (
               <div className="flex justify-center items-center gap-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 <span>{post ? "Updating..." : "Submitting..."}</span>
@@ -168,7 +163,6 @@ export default function PostForm({ post }) {
               "Submit"
             )}
           </Button>
-        )}
       </div>
     </form>
   );

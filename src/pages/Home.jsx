@@ -1,61 +1,62 @@
-import React, { useEffect, useState } from "react";
-import appwriteService from "../appwrite/config";
+import React, { useEffect } from "react";
 import { Container, PostCard } from "../components";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { fetchPosts } from "../store/postSlice";
 
 function Home() {
-  const [posts, setPosts] = useState([]);
+  const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.userData);
   const authStatus = useSelector((state) => state.auth.status);
+  const posts = useSelector((state) => state.post.posts);
+  const loading = useSelector((state) => state.post.loading);
+  const error = useSelector((state) => state.post.error);
 
   useEffect(() => {
-      if(authStatus) {
-        appwriteService.getPosts().then((posts) => {
-        if (posts) {
-          setPosts(posts.documents);
-        }
-      });
-      }
-  }, []);
+    if (authStatus) {
+      dispatch(fetchPosts());
+    }
+  }, [authStatus, dispatch]);
 
+  if (loading) {
+    return (
+      <div className="w-full py-8 mt-4 text-center">
+        <Container>
+          <p className="text-xl font-semibold">Loading posts...</p>
+        </Container>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full py-8 mt-4 text-center text-red-500">
+        <Container>
+          <p className="text-xl font-semibold">Error: {error}</p>
+        </Container>
+      </div>
+    );
+  }
 
   if (!user && posts.length === 0) {
     return (
       <div className="w-full py-8 mt-4 text-center">
         <Container>
-          <div className="flex flex-wrap">
-            {/* <div className="p-2 w-full">
-              <h1 className="text-2xl font-bold hover:text-gray-500">
-                POSTS
-              </h1>
-            </div> */}
-            {authStatus ? ((
-                            <div className='p-2 w-full'>
-                            <h1 className='text-2xl font-bold hover:text-gray-500'>
-                                Welcome ! Add Posts.
-                            </h1>
-                        </div>
-                        )) : (<div className='p-2 w-full'>
-                            <h1 className='text-2xl font-bold hover:text-gray-500'>
-                                Login to read posts !!
-                            </h1>
-                        </div>)}
-          </div>
+          <h1 className="text-2xl font-bold hover:text-gray-500">
+            Login to read posts !!
+          </h1>
         </Container>
       </div>
     );
-  } else if (user && posts.length === 0) {
+  }
+
+  if (user && posts.length === 0) {
     return (
       <div className="w-full py-8 mt-4 text-center">
         <Container>
-          <div className="flex flex-wrap">
-            <div className="p-2 w-full">
-              <h1 className="text-2xl font-bold hover:text-gray-500">
-                Welcome back, {user.name}! <br />
-                Add your posts:
-              </h1>
-            </div>
-          </div>
+          <h1 className="text-2xl font-bold hover:text-gray-500">
+            Welcome back, {user.name}! <br />
+            Add your posts:
+          </h1>
         </Container>
       </div>
     );

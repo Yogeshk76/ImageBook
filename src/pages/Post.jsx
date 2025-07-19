@@ -1,32 +1,35 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import appwriteService from "../appwrite/config";
 import { Button, Container } from "../components";
 import parse from "html-react-parser";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { getPostById, deletePostById } from "../store/postSlice";
 
 export default function Post() {
-  const [post, setPost] = useState(null);
   const { slug } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const post = useSelector((state) => state.post.selectedPost);
+  const loading = useSelector((state) => state.post.loading);
+  const error = useSelector((state) => state.post.error);
 
   const userData = useSelector((state) => state.auth.userData);
 
-  const isAuthor = useMemo(() => {
-  return post && userData ? post.userId === userData.$id : false;
-}, [post, userData]);
-
   useEffect(() => {
     if (slug) {
-      appwriteService.getPost(slug).then((post) => {
-        if (post) setPost(post);
-        else navigate("/");
-      });
+      dispatch(getPostById(slug)).unwrap();
     } else navigate("/");
   }, [slug, navigate]);
 
+  useEffect(() => {
+  if (!loading && slug && post === null) {
+    navigate("/");
+  }
+}, [post, navigate, slug, loading]);
+
   const deletePost = () => {
-    appwriteService.deletePost(post.$id).then((status) => {
+    dispatch(deletePostById(post.$id)).unwrap().then((status) => {
       if (status) {
         appwriteService.deleteFile(post.featuredImage);
         navigate("/");
@@ -34,9 +37,17 @@ export default function Post() {
     });
   };
 
+  const isAuthor = useMemo(() => {
+    return post && userData ? post.userId === userData.$id : false;
+  }, [post, userData]);
+
   return post ? (
     <div className="py-8">
       <Container>
+        {loading && <div className="text-center">Loading...</div>}
+        {error && <div className="text-red-500 text-center">{error}</div>}
+
+
         <div className="w-full flex justify-center mb-4 relative border rounded-xl p-2">
           <img
             src={appwriteService.getFileView(post.featuredImage)}

@@ -11,6 +11,8 @@ const LogoutBtn = () => {
       .logout()
       .then(() => {
         dispatch(logout());
+        // 🔄 Force a full app reload to clear lingering state like images
+        window.location.reload();
       })
       .catch((error) => {
         console.error("Logout failed:", error);
