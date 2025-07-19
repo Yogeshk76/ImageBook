@@ -6,13 +6,16 @@ import { useSelector } from "react-redux";
 function Home() {
   const [posts, setPosts] = useState([]);
   const user = useSelector((state) => state.auth.userData);
+  const authStatus = useSelector((state) => state.auth.status);
 
   useEffect(() => {
-      appwriteService.getPosts().then((posts) => {
+      if(authStatus) {
+        appwriteService.getPosts().then((posts) => {
         if (posts) {
           setPosts(posts.documents);
         }
       });
+      }
   }, []);
 
 
@@ -21,11 +24,22 @@ function Home() {
       <div className="w-full py-8 mt-4 text-center">
         <Container>
           <div className="flex flex-wrap">
-            <div className="p-2 w-full">
+            {/* <div className="p-2 w-full">
               <h1 className="text-2xl font-bold hover:text-gray-500">
                 POSTS
               </h1>
-            </div>
+            </div> */}
+            {authStatus ? ((
+                            <div className='p-2 w-full'>
+                            <h1 className='text-2xl font-bold hover:text-gray-500'>
+                                Welcome ! Add Posts.
+                            </h1>
+                        </div>
+                        )) : (<div className='p-2 w-full'>
+                            <h1 className='text-2xl font-bold hover:text-gray-500'>
+                                Login to read posts !!
+                            </h1>
+                        </div>)}
           </div>
         </Container>
       </div>
@@ -38,7 +52,7 @@ function Home() {
             <div className="p-2 w-full">
               <h1 className="text-2xl font-bold hover:text-gray-500">
                 Welcome back, {user.name}! <br />
-                Here are your posts:
+                Add your posts:
               </h1>
             </div>
           </div>
